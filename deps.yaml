@@ -1,0 +1,116 @@
+# External dependencies. NOTHING in this file is shipped inside this repository:
+# every item is declared with a version, a homepage and a per-platform hint, and
+# you fetch it yourself. `edith doctor` checks what is present; `edith fetch`
+# walks you through what is missing. Only our own logic lives in this repo.
+#
+# Fields
+#   id        short name, used on the command line
+#   why       what the pipeline uses it for (shown by `doctor`)
+#   required  false means the pipeline degrades gracefully without it
+#   version   the version this project is known to work with
+#   home      where the tool is published (never a direct download link we can't verify)
+#   check     how to detect it: a command + expected output, or a path
+#   install   per-platform instruction, shown verbatim
+
+schema: 1
+
+dependencies:
+  - id: ffmpeg
+    why: loudness normalisation and audio checks; the renderer itself does not need it
+    required: false
+    version: ">=6.0"
+    home: https://ffmpeg.org/download.html
+    check:
+      command: [ffmpeg, -version]
+      expect: ffmpeg version
+    install:
+      darwin: brew install ffmpeg
+      win32: winget install Gyan.FFmpeg
+      linux: sudo apt install ffmpeg
+
+  - id: node
+    why: runs the Remotion renderer
+    required: true
+    version: ">=20"
+    home: https://nodejs.org/en/download
+    check:
+      command: [node, --version]
+      expect: v
+    install:
+      darwin: brew install node
+      win32: winget install OpenJS.NodeJS.LTS
+      linux: install Node 20+ with your package manager or nvm
+
+  - id: rhubarb
+    why: mouth-shape cues for the presenter, generated from the final audio
+    required: false
+    version: "1.14.0"
+    home: https://github.com/DanielSWolf/rhubarb-lip-sync/releases
+    check:
+      command: [tools/rhubarb/rhubarb, --version]
+      expect: Rhubarb
+    install:
+      darwin: download the macOS build from releases and unzip it into tools/rhubarb/
+      win32: download the Windows build from releases and unzip it into tools\rhubarb\
+      linux: download the Linux build from releases and unzip it into tools/rhubarb/
+    note: >
+      Required only when the presenter is enabled. The binary is never committed —
+      it is a release download you place under tools/ yourself.
+
+  - id: kokoro-model
+    why: local text-to-speech weights, Apache-2.0, no paid service
+    required: true
+    version: "v1.0"
+    home: https://github.com/thewh1teagle/kokoro-onnx/releases
+    check:
+      path:
+        - models/kokoro-v1.0.onnx
+        - models/voices-v1.0.bin
+    files:
+      - path: models/kokoro-v1.0.onnx
+        size: 325532387
+        url: https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+      - path: models/voices-v1.0.bin
+        size: 28214398
+        url: https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+    install:
+      darwin: fetch kokoro-v1.0.onnx and voices-v1.0.bin from releases into models/
+      win32: fetch kokoro-v1.0.onnx and voices-v1.0.bin from releases into models\
+      linux: fetch kokoro-v1.0.onnx and voices-v1.0.bin from releases into models/
+    note: >
+      Two files, released with kokoro-onnx. voices-v1.0.bin is 28 MB and holds the
+      54 stock voices, so the voice menu only works once both files are present.
+      The model is Apache-2.0 and runs on CPU through onnxruntime, which is what
+      makes Windows support possible without Apple's MLX.
+
+  - id: renderer
+    why: Remotion and React packages that draw the frames
+    required: false
+    version: "4.0.539"
+    home: https://www.remotion.dev
+    check:
+      path: video/node_modules/@remotion/cli/remotion-cli.js
+    install:
+      darwin: cd video && npm install
+      win32: cd video && npm install
+      linux: cd video && npm install
+    note: >
+      Installed by setup.command / setup.bat, never committed. The first render
+      also fetches Remotion's own headless Chrome (about 90 MB) into
+      video/node_modules/.remotion — that download is Remotion's, not ours.
+
+  - id: fonts
+    why: typography for the slide layer; the repo ships no fonts
+    required: false
+    version: any .ttf or .otf
+    home: https://fonts.google.com
+    check:
+      path: fonts/
+    install:
+      darwin: add a font file you have the right to use under fonts/
+      win32: add a font file you have the right to use under fonts\
+      linux: add a font file you have the right to use under fonts/
+    note: >
+      Licensing is yours to clear: a font that ships with macOS or Windows is not
+      automatically licensed for a video you publish. Open-licence families such as
+      Inter, Source Sans and Noto are safe choices.

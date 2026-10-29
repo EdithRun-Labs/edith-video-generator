@@ -1,0 +1,112 @@
+# Everything about this video lives here. Nothing about style, length or subject
+# is built into the tool. Run `edith validate examples/demo/project.yaml`.
+
+meta:
+  title: Why the bakery still sells out
+  subtitle: Capacity, throughput and the queue in between
+  author: Demo project
+  date: 2026-10-29
+  language: en
+  branding: BAKERY OPERATIONS · DEMO
+
+source:
+  file: source.md
+  kind: markdown
+
+target:
+  duration_sec: 61
+  max_duration_sec: 120
+
+voice:
+  provider: kokoro-onnx
+  voice: af_sarah
+  speed: 1.0
+  disclosure: true
+
+style:
+  layout: screen
+  palette:
+    background: "#f7f4ee"
+    surface: "#ffffff"
+    text: "#1d2430"
+    text_muted: "#5c6673"
+    accent: "#2f6b4f"
+    on_accent: "#ffffff"
+    hairline: "#d9d3c7"
+  fonts:
+    body:
+      family: Inter
+    heading:
+      family: Inter
+  captions:
+    position: bottom
+    max_chars_per_line: 42
+    burned_in: true
+    srt: true
+
+avatar:
+  enabled: true
+  name: Mara
+  preset: neutral
+
+scenes:
+  - id: S01
+    title: Opens at six, empty by nine
+    target_sec: 16
+    paragraphs:
+      - text: >-
+          A bakery opens at six and sells out by nine. The owner assumed the ovens
+          were the limit, so she bought a third one. Nothing changed.
+      - text: >-
+          The queue still formed, and the shelves were still empty by half past nine.
+        diagram:
+          type: timeline
+          title: A Saturday morning
+          data:
+            marks:
+              - {at: "06:00", label: open}
+              - {at: "07:10", label: queue}
+              - {at: "09:30", label: sold out}
+
+  - id: S02
+    title: Where the week actually went
+    target_sec: 17
+    paragraphs:
+      - text: >-
+          She counted, for one week, what each station actually did. The ovens ran
+          fourteen hours in total. Mixing ran six.
+      - text: >-
+          Packaging ran three and a half. The rest of the time the dough sat on a
+          tray, waiting for an oven to free up.
+        diagram:
+          type: bar
+          title: Hours per station, one week
+          data:
+            items:
+              - {label: Ovens, value: 14}
+              - {label: Mixing, value: 6}
+              - {label: Packaging, value: 3.5}
+
+  - id: S03
+    title: Reordering the batches
+    target_sec: 16
+    paragraphs:
+      - text: >-
+          She did not buy anything. She changed the order of the batches so that the
+          slowest item went in first, and the quick rolls went in last.
+      - text: >-
+          Oven time stayed the same. Waiting time fell from forty minutes to seven.
+        diagram:
+          type: flow
+          title: Sourdough first, rolls last
+          data:
+            steps: [Sourdough in first, Buns, Rolls last]
+
+  - id: S04
+    title: Capacity is not throughput
+    target_sec: 12
+    paragraphs:
+      - text: >-
+          Capacity is not the same as throughput. The station that looks busy is often
+          not the station that is limiting you.
+      - text: Find the queue, not the queue's excuse.

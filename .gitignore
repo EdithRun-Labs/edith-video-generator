@@ -1,0 +1,39 @@
+# Everything the tool fetches, downloads or installs lives outside this repo.
+# Only our own code is tracked.
+
+# macOS
+.DS_Store
+._*
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Node / Remotion
+node_modules/
+build/
+
+# Generated per project
+out/
+renders/
+audio/
+models/
+fonts/
+build.json
+*.mp4
+*.wav
+*.srt
+
+# The user's source text stays theirs
+sources/*
+!sources/.gitkeep
+video/node_modules/
+video/public/
+
+# per-project build output
+examples/*/audio/
+examples/*/build/
+examples/*/out/
