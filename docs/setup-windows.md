@@ -83,6 +83,10 @@ has a prompt that produces the scene shape the wizard reads.
 | Rhubarb (presenter only) | unzip the Windows release into `tools\rhubarb\` — it must end up as `tools\rhubarb\rhubarb.exe` |
 | fonts | any `.ttf`/`.otf` you have the right to use, into `fonts\` |
 
+Rhubarb is optional and only drives the presenter's mouth. Without it `build`
+prints `lip sync skipped: ...`, the presenter keeps a closed mouth, and the
+speech, captions, diagrams and render all work unchanged.
+
 ## 6. When something goes wrong
 
 | message | fix |

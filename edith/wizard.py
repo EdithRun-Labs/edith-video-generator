@@ -48,6 +48,7 @@ SEED_PALETTES: dict[str, dict[str, str]] = {
 VOICES = tts.VOICES
 LAYOUTS = ["screen", "fullbleed", "split"]
 AVATAR_PRESETS = ["neutral", "workshop", "office"]
+AVATAR_POSITIONS = ["corner", "side", "full"]
 WORDS_PER_SECOND = 2.5
 MIN_SCENE_SEC = 15
 WORDS_PER_SCENE = 220
@@ -149,6 +150,9 @@ def build_spec(answers: dict) -> dict:
             "enabled": bool(answers.get("avatar_enabled", False)),
             "name": answers.get("avatar_name", "Presenter"),
             "preset": answers.get("avatar_preset", "neutral"),
+            "position": answers.get("avatar_position", "corner"),
+            "size": float(answers.get("avatar_size", 0.34)),
+            "images": answers.get("avatar_images") or None,
         },
         "scenes": answers["scenes"],
     }
@@ -207,6 +211,9 @@ def run(out: Path, ask=input, tell=print, *, force: bool = False) -> dict:
     if answers["avatar_enabled"]:
         answers["avatar_name"] = _ask(ask, "Presenter name", "Presenter")
         answers["avatar_preset"] = _ask(ask, f"Presenter preset {AVATAR_PRESETS}", "neutral")
+        answers["avatar_position"] = _ask(ask, f"Presenter position {AVATAR_POSITIONS}", "corner")
+        answers["avatar_size"] = _ask(ask, "Presenter height, fraction of the frame", "0.34")
+        answers["avatar_images"] = _ask(ask, "Mouth-shape PNG folder (optional)")
 
     base_dir = out.parent.resolve()
     try:

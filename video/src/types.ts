@@ -16,6 +16,8 @@ export type Diagram = {
   data: any;
 };
 
+export type MouthCue = { startFrame: number; endFrame: number; shape: string };
+
 export type Paragraph = {
   startFrame: number;
   durationInFrames: number;
@@ -23,6 +25,17 @@ export type Paragraph = {
   pages: number[];
   diagram: Diagram | null;
   audio: string;
+  mouth: MouthCue[];
+};
+
+export type Avatar = {
+  enabled: boolean;
+  name: string;
+  preset: "neutral" | "workshop" | "office";
+  position: "corner" | "side" | "full";
+  size: number;
+  palette: Record<string, string> | null;
+  images: Record<string, string> | null;
 };
 
 export type Cue = { startFrame: number; endFrame: number; text: string };
@@ -53,5 +66,6 @@ export type Props = {
   captions: { position: "bottom" | "top"; burned_in: boolean };
   cards: { titleFrames: number; creditsFrames: number };
   disclosure: string | null;
+  avatar: Avatar;
   scenes: Scene[];
 };

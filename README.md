@@ -4,9 +4,9 @@ Turn a source document into a narrated explainer video. One YAML file describes
 the video — subject, source, length, palette, fonts, voice — and the tool builds
 it. Nothing about style or subject is baked in.
 
-**Status: step 5 of 8.** Spec, wizard, speech, lip sync, timing and a working
-renderer. A 61-second demo renders to 1080p with captions and burned-in audio.
-Still missing: the presenter, contrast checks and CI.
+**Status: step 6 of 8.** Spec, wizard, speech, lip-sync cues, the presenter,
+timing and a working renderer. A 61-second demo renders to 1080p with captions
+and burned-in audio. Still missing: contrast checks and CI.
 
 ## You do not need an AI assistant
 
@@ -122,6 +122,45 @@ runtime budget and caption timing honest. Re-running reuses any paragraph whose
 text, voice and speed are unchanged (`audio/clips.yaml` holds the keys);
 `--force` re-renders everything.
 
+## The presenter
+
+A presenter bust can sit in the frame and move its mouth with the narration. It
+is off unless the spec asks for it:
+
+```yaml
+avatar:
+  enabled: true
+  name: Mara          # a label for you; nothing draws it
+  preset: neutral     # neutral | workshop | office — wardrobe only
+  position: corner    # corner | side | full
+  size: 0.34          # bust height as a fraction of the frame, 0.15 to 0.6
+  palette: null       # optional colour overrides, see below
+  images: null        # optional folder of mouth-shape PNGs
+```
+
+- `corner` anchors it bottom-right, lifted clear of a bottom caption band; text
+  and diagrams shorten rather than run underneath it. `side` centres it on the
+  right edge. `full` puts it bottom-left and shifts the whole layout right.
+- It appears in scenes only — never on the title card or the credits.
+- **Without `images`** it is vector art. The `preset` chooses a plain shirt, a
+  shirt with a hi-vis stripe band, or an office jacket with a shirt and lapels;
+  the shirt takes `palette.accent`, the jacket its own navy. Override any of
+  `skin`, `skin_shadow`, `hair`, `lip`, `mouth_in`, `teeth`, `tongue`, `eye`,
+  `sclera` and `clothing` under `avatar.palette`.
+- **With `images`** it becomes your own art: nine transparent PNGs named `A.png`
+  through `H.png` plus `X.png` — Rhubarb's mouth shapes, any letter case, all
+  drawn on one canvas. All nine must be present, or the run falls back to the
+  vector presenter and `edith validate` names the missing shapes.
+
+### Lip sync
+
+Mouth shapes come from [Rhubarb Lip Sync](https://github.com/DanielSWolf/rhubarb-lip-sync)
+1.14, run once per paragraph wav. The cues are cached next to that wav and keyed
+to its text and voice, so editing one paragraph re-runs Rhubarb for that
+paragraph only. Rhubarb is optional: without it `build` prints
+`lip sync skipped: ...`, the presenter keeps a closed mouth, and the rest of the
+video renders normally.
+
 ## Nothing external is vendored
 
 `deps.yaml` declares ffmpeg, Node, Rhubarb, the Kokoro weights and fonts with a
@@ -140,7 +179,7 @@ edith/build.py     frame timings, caption cues, props.json, SRT
 edith/rhubarb.py   lip-sync cues from a finished wav
 edith/fetch.py     guided download of the weight files deps.yaml pins
 edith/cli.py       validate / doctor / init / voice / build / render
-video/              the Remotion renderer: title, scenes, captions, diagrams
+video/              the Remotion renderer: title, scenes, captions, presenter, diagrams
 setup.command       macOS double-click: check Python, make .venv, install, doctor
 setup.bat           Windows double-click: the same
 docs/setup-*.md     those steps written out, one page per OS
@@ -159,8 +198,11 @@ LICENSE             MIT
 - The `kokoro-onnx` path also runs end to end on CPU, using the weights
   `edith fetch` downloads. Nothing has been executed on Windows yet — the `.bat`
   and the Windows page are written but unrun.
-- Layouts and all seven diagram types render; the presenter and any contrast
-  checking do not exist.
+- Layouts and all seven diagram types render; the presenter renders in all three
+  placements, and falls back to a closed mouth when Rhubarb is absent.
+- Rhubarb 1.14 ran in this repo on the demo: eight paragraph wavs, cues cached
+  beside each wav, and stills taken from those real cues match the shape the
+  props asked for. Contrast checking does not exist.
 
 ## Licence
 

@@ -104,9 +104,9 @@ def resolve_binary(binary: str, root: Path, platform: str) -> Path | None:
     """Find a program declared in the manifest.
 
     Windows executables carry a .exe suffix, so a manifest can name `rhubarb`
-    once and still resolve `tools/rhubarb/rhubarb.exe`. A bare name is looked up
-    on PATH (which honours PATHEXT on Windows); a path is resolved against the
-    repository root.
+    once and still resolve `tools/rhubarb/rhubarb.exe`. A path is resolved
+    against the repository root and nowhere else; only a bare name falls back
+    to PATH, so a project folder cannot pick up a binary that is not its own.
     """
     candidate = Path(binary)
     if not candidate.is_absolute():
@@ -117,5 +117,7 @@ def resolve_binary(binary: str, root: Path, platform: str) -> Path | None:
     for path in names:
         if path.is_file():
             return path
+    if len(Path(binary).parts) > 1:
+        return None
     found = shutil.which(binary)
     return Path(found) if found else None

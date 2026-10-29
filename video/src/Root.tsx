@@ -13,6 +13,15 @@ const fallback: Props = {
   captions: { position: "bottom", burned_in: true },
   cards: { titleFrames: 75, creditsFrames: 0 },
   disclosure: null,
+  avatar: {
+    enabled: false,
+    name: "Presenter",
+    preset: "neutral",
+    position: "corner",
+    size: 0.34,
+    palette: null,
+    images: null,
+  },
   scenes: [],
 };
 

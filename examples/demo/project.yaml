@@ -48,6 +48,8 @@ avatar:
   enabled: true
   name: Mara
   preset: neutral
+  position: corner
+  size: 0.34
 
 scenes:
   - id: S01

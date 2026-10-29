@@ -187,3 +187,81 @@ def test_run_without_binary_explains_how_to_get_it(tmp_path):
     with pytest.raises(rhubarb.RhubarbError) as caught:
         rhubarb.run(tmp_path / "a.wav", tmp_path / "a.json", tmp_path)
     assert "tools/rhubarb/rhubarb" in str(caught.value)
+
+
+def _fake_rhubarb(root):
+    """A stand-in binary that writes one canned Rhubarb payload and counts calls."""
+    binary = root / "tools" / "rhubarb" / "rhubarb"
+    binary.parent.mkdir(parents=True)
+    payload = (
+        '{"mouthCues":[{"start":0,"end":0.2,"value":"A"},'
+        '{"start":0.2,"end":0.5,"value":"D"}]}'
+    )
+    binary.write_text(
+        "#!/bin/sh\n"
+        'echo run >> "$(dirname "$0")/calls.txt"\n'
+        'out=""\n'
+        'while [ $# -gt 0 ]; do\n'
+        '  if [ "$1" = "--output" ]; then out="$2"; fi\n'
+        "  shift\n"
+        "done\n"
+        f"cat > \"$out\" <<'JSON'\n{payload}\nJSON\n"
+    )
+    binary.chmod(0o755)
+    return binary
+
+
+def _calls(root):
+    log = root / "tools" / "rhubarb" / "calls.txt"
+    return len(log.read_text().splitlines()) if log.exists() else 0
+
+
+def test_cues_for_runs_rhubarb_once_then_reuses_the_cache(tmp_path):
+    _fake_rhubarb(tmp_path)
+    audio = tmp_path / "S01-01.wav"
+    audio.write_bytes(b"")
+    out = tmp_path / "S01-01.json"
+
+    first = rhubarb.cues_for(audio, out, "key-1", tmp_path)
+    second = rhubarb.cues_for(audio, out, "key-1", tmp_path)
+
+    assert [(cue.start, cue.shape) for cue in first] == [(0.0, "A"), (0.2, "D")]
+    assert [(cue.start, cue.shape) for cue in second] == [(0.0, "A"), (0.2, "D")]
+    assert _calls(tmp_path) == 1
+
+
+def test_cues_for_reruns_when_the_text_or_voice_changes(tmp_path):
+    _fake_rhubarb(tmp_path)
+    audio = tmp_path / "S01-01.wav"
+    audio.write_bytes(b"")
+    out = tmp_path / "S01-01.json"
+
+    rhubarb.cues_for(audio, out, "key-1", tmp_path)
+    rhubarb.cues_for(audio, out, "key-2", tmp_path)
+
+    assert _calls(tmp_path) == 2
+
+
+def test_cues_for_force_ignores_the_cache(tmp_path):
+    _fake_rhubarb(tmp_path)
+    audio = tmp_path / "S01-01.wav"
+    audio.write_bytes(b"")
+    out = tmp_path / "S01-01.json"
+
+    rhubarb.cues_for(audio, out, "key-1", tmp_path)
+    rhubarb.cues_for(audio, out, "key-1", tmp_path, force=True)
+
+    assert _calls(tmp_path) == 2
+
+
+def test_cues_for_reads_the_cache_without_the_binary(tmp_path):
+    binary = _fake_rhubarb(tmp_path)
+    audio = tmp_path / "S01-01.wav"
+    audio.write_bytes(b"")
+    out = tmp_path / "S01-01.json"
+
+    rhubarb.cues_for(audio, out, "key-1", tmp_path)
+    binary.unlink()
+
+    cues = rhubarb.cues_for(audio, out, "key-1", tmp_path)
+    assert [cue.shape for cue in cues] == ["A", "D"]

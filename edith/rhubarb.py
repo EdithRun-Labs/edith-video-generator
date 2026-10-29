@@ -13,9 +13,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .deps import load_manifest, platform_key, resolve_binary
+from .spec import MOUTH_SHAPES
 
 PROGRAM = "tools/rhubarb/rhubarb"
-SHAPES = "ABCDEFGHX"
+SHAPES = MOUTH_SHAPES
 TIMEOUT_SEC = 3600
 
 
@@ -71,6 +72,38 @@ def run(audio: Path, out: Path, root: Path, platform: str | None = None) -> list
     if not out.exists():
         raise RhubarbError(f"Rhubarb reported success but wrote nothing to {out}")
     return parse(json.loads(out.read_text()))
+
+
+def cues_for(
+    audio: Path, out: Path, key: str, root: Path, platform: str | None = None, force: bool = False
+) -> list[Cue]:
+    """Mouth cues for one wav, reused from `out` while its key still matches.
+
+    The key is the clip key: text, voice and speed. An unchanged paragraph is
+    never sent through Rhubarb twice, which is what makes rebuilds cheap.
+    """
+    out = Path(out)
+    if not force:
+        cached = _cached(out, key)
+        if cached is not None:
+            return cached
+    cues = run(audio, out, root, platform)
+    payload = json.loads(out.read_text())
+    payload["key"] = key
+    out.write_text(json.dumps(payload))
+    return cues
+
+
+def _cached(out: Path, key: str) -> list[Cue] | None:
+    if not out.exists():
+        return None
+    try:
+        payload = json.loads(out.read_text())
+        if not isinstance(payload, dict) or payload.get("key") != key:
+            return None
+        return parse(payload)
+    except (OSError, json.JSONDecodeError, RhubarbError):
+        return None
 
 
 def parse(payload: dict) -> list[Cue]:

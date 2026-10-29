@@ -25,12 +25,23 @@ from pydantic import (
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 SCENE_ID = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,15}$")
 DURATION_TOLERANCE = 0.10
+MOUTH_SHAPES = "ABCDEFGHX"
 
 
 def _hex(value: str) -> str:
     if not HEX.match(value):
         raise ValueError(f"{value!r} is not a #rrggbb colour")
     return value.lower()
+
+
+def avatar_image(folder: Path, shape: str) -> Path | None:
+    """The PNG for one mouth shape, matched without caring about file-name case."""
+    if not folder.is_dir():
+        return None
+    for entry in sorted(folder.iterdir()):
+        if entry.is_file() and entry.suffix.lower() == ".png" and entry.stem.upper() == shape:
+            return entry
+    return None
 
 
 Hex = Annotated[str, AfterValidator(_hex)]
@@ -145,8 +156,13 @@ class Avatar(BaseModel):
 
     enabled: bool = False
     name: str = "Presenter"
-    preset: str = "neutral"
+    preset: Literal["neutral", "workshop", "office"] = "neutral"
+    position: Literal["corner", "side", "full"] = "corner"
+    size: float = Field(default=0.34, ge=0.15, le=0.6, description="bust height, fraction of the frame")
     palette: dict[str, Hex] | None = None
+    images: str | None = Field(
+        default=None, description="folder holding one PNG per mouth shape; blank uses the vector presenter"
+    )
 
 
 class Diagram(BaseModel):
@@ -225,6 +241,19 @@ class Project(BaseModel):
             out.append(f"source file {self.source.file} does not exist yet (relative to the spec)")
         if self.avatar.enabled and not self.source.file:
             out.append("avatar is enabled but no source file is set")
+        if self.avatar.images:
+            folder = base_dir / self.avatar.images
+            if not folder.is_dir():
+                out.append(
+                    f"avatar.images {self.avatar.images} is not a folder; the vector presenter will be used"
+                )
+            else:
+                missing = [shape for shape in MOUTH_SHAPES if avatar_image(folder, shape) is None]
+                if missing:
+                    out.append(
+                        f"avatar.images {self.avatar.images} has no PNG for {', '.join(missing)}; "
+                        "the vector presenter will be used"
+                    )
         return out
 
     def summary(self) -> str:

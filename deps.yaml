@@ -54,8 +54,9 @@ dependencies:
       win32: download the Windows build from releases and unzip it into tools\rhubarb\
       linux: download the Linux build from releases and unzip it into tools/rhubarb/
     note: >
-      Required only when the presenter is enabled. The binary is never committed —
-      it is a release download you place under tools/ yourself.
+      Needed for the presenter's lip sync only. Without it the presenter keeps a
+      closed mouth and `build` prints "lip sync skipped". The binary is never
+      committed — it is a release download you place under tools/ yourself.
 
   - id: kokoro-model
     why: local text-to-speech weights, Apache-2.0, no paid service

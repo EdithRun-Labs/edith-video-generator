@@ -22,6 +22,7 @@ renders/
 audio/
 models/
 fonts/
+tools/
 build.json
 *.mp4
 *.wav

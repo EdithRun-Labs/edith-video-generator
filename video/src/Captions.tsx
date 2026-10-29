@@ -6,7 +6,8 @@ export const Captions: React.FC<{
   cues: Cue[];
   palette: Palette;
   position: "bottom" | "top";
-}> = ({ cues, palette, position }) => {
+  inset?: { left: number; right: number };
+}> = ({ cues, palette, position, inset = { left: 0, right: 0 } }) => {
   const frame = useCurrentFrame();
   const cue = cues.find((c) => frame >= c.startFrame && frame < c.endFrame);
   if (!cue) return null;
@@ -23,7 +24,10 @@ export const Captions: React.FC<{
       style={{
         justifyContent: position === "bottom" ? "flex-end" : "flex-start",
         alignItems: "center",
-        padding: position === "bottom" ? "0 96px 64px" : "120px 96px 0",
+        padding:
+          position === "bottom"
+            ? `0 ${96 + inset.right}px 64px ${96 + inset.left}px`
+            : `120px ${96 + inset.right}px 0 ${96 + inset.left}px`,
         pointerEvents: "none",
       }}
     >

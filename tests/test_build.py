@@ -2,8 +2,9 @@ import json
 
 import pytest
 
-from edith import build
-from edith.spec import Project
+import fake_rhubarb
+from edith import build, rhubarb
+from edith.spec import MOUTH_SHAPES, Project
 from edith.tts import Clip
 
 
@@ -128,3 +129,111 @@ def test_build_writes_props_audio_and_srt(tmp_path):
     assert render.cues > 0
     assert (video / "public" / "audio" / "S01-01.wav").exists()
     assert render.srt.read_text().startswith("1\n")
+
+
+def test_props_carry_the_avatar_settings(tmp_path):
+    project = _project(tmp_path)
+    project.avatar.enabled = True
+    project.avatar.preset = "office"
+    project.avatar.position = "side"
+    project.avatar.size = 0.5
+    props, _, _ = build.build_props(project, _clips(tmp_path, project), tmp_path, tmp_path)
+
+    avatar = props["avatar"]
+    assert avatar["enabled"] is True
+    assert (avatar["preset"], avatar["position"]) == ("office", "side")
+    assert avatar["size"] == pytest.approx(0.5)
+    assert avatar["images"] is None
+
+
+def test_mouth_cues_are_relative_to_their_paragraph(tmp_path):
+    project = _project(tmp_path, scenes=1, paragraphs=2)
+    clips = _clips(tmp_path, project)
+    mouth = {
+        "S01-01": [{"startFrame": 3, "endFrame": 12, "shape": "A"}],
+        "S01-02": [{"startFrame": 0, "endFrame": 6, "shape": "X"}],
+    }
+    props, _, _ = build.build_props(project, clips, tmp_path, tmp_path, mouth=mouth)
+
+    first, second = props["scenes"][0]["paragraphs"]
+    assert first["mouth"] == [{"startFrame": 3, "endFrame": 12, "shape": "A"}]
+    assert second["mouth"] == [{"startFrame": 0, "endFrame": 6, "shape": "X"}]
+
+
+def test_avatar_off_means_no_mouth_cues(tmp_path):
+    project = _project(tmp_path)
+    props, _, _ = build.build_props(project, _clips(tmp_path, project), tmp_path, tmp_path)
+
+    assert props["avatar"]["enabled"] is False
+    assert all(
+        paragraph["mouth"] == []
+        for scene in props["scenes"]
+        for paragraph in scene["paragraphs"]
+    )
+
+
+def _avatar_folder(tmp_path, shapes):
+    folder = tmp_path / "art"
+    folder.mkdir()
+    for shape in shapes:
+        (folder / f"{shape}.png").write_bytes(b"\x89PNG")
+    return folder
+
+
+def test_avatar_images_are_copied_and_mapped(tmp_path):
+    project = _project(tmp_path)
+    project.avatar.enabled = True
+    _avatar_folder(tmp_path, MOUTH_SHAPES)
+    project.avatar.images = "art"
+    video = tmp_path / "video"
+
+    render = build.build(project, _clips(tmp_path, project), tmp_path, video, tmp_path / "out")
+    images = json.loads(render.props.read_text())["avatar"]["images"]
+
+    assert images["A"] == "avatar/A.png"
+    assert sorted(images) == sorted(MOUTH_SHAPES)
+    assert (video / "public" / "avatar" / "A.png").exists()
+
+
+def test_incomplete_avatar_images_fall_back_to_the_vector(tmp_path):
+    project = _project(tmp_path)
+    project.avatar.enabled = True
+    _avatar_folder(tmp_path, "AB")
+    project.avatar.images = "art"
+    video = tmp_path / "video"
+
+    render = build.build(project, _clips(tmp_path, project), tmp_path, video, tmp_path / "out")
+
+    assert json.loads(render.props.read_text())["avatar"]["images"] is None
+    assert not (video / "public" / "avatar").exists()
+
+
+def test_build_runs_lip_sync_when_the_avatar_is_on(tmp_path):
+    project = _project(tmp_path)
+    project.avatar.enabled = True
+    fake_rhubarb.install(tmp_path)
+    clips = _clips(tmp_path, project)
+
+    render = build.build(
+        project, clips, tmp_path, tmp_path / "video", tmp_path / "out", root=tmp_path
+    )
+    paragraphs = json.loads(render.props.read_text())["scenes"][0]["paragraphs"]
+
+    assert paragraphs[0]["mouth"] == [
+        {"startFrame": 0, "endFrame": 6, "shape": "A"},
+        {"startFrame": 6, "endFrame": 15, "shape": "D"},
+    ]
+    assert fake_rhubarb.calls(tmp_path) == len(clips)
+
+
+def test_build_survives_a_missing_rhubarb_binary(tmp_path, capsys):
+    project = _project(tmp_path)
+    project.avatar.enabled = True
+
+    render = build.build(
+        project, _clips(tmp_path, project), tmp_path, tmp_path / "video", tmp_path / "out", root=tmp_path
+    )
+    paragraphs = json.loads(render.props.read_text())["scenes"][0]["paragraphs"]
+
+    assert paragraphs[0]["mouth"] == []
+    assert "lip sync skipped" in capsys.readouterr().out

@@ -166,7 +166,7 @@ def _prepare(args: argparse.Namespace) -> tuple[Project, Path, list[tts.Clip]]:
 
 
 def _build(project: Project, base: Path, clips: list[tts.Clip]) -> buildmod.Render:
-    return buildmod.build(project, clips, base, ROOT / "video", base / "build")
+    return buildmod.build(project, clips, base, ROOT / "video", base / "build", root=ROOT)
 
 
 def _slug(title: str) -> str:

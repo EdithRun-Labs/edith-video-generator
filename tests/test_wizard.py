@@ -90,6 +90,41 @@ def test_wizard_run_writes_a_valid_spec(tmp_path):
     assert any("wrote" in line for line in lines)
 
 
+def test_wizard_records_presenter_placement(tmp_path):
+    shutil.copy(DEMO_SOURCE, tmp_path / "source.md")
+    replies = iter(
+        [
+            "Bakery operations",
+            "",
+            "DEMO 101",
+            "Kulkarni",
+            "source.md",
+            "3",
+            "screen",
+            "light",
+            "",
+            "Inter",
+            "bottom",
+            "bf_emma",
+            "1.0",
+            "yes",
+            "Kim",
+            "office",
+            "side",
+            "0.5",
+            "",
+        ]
+    )
+    out = tmp_path / "project.yaml"
+    wizard.run(out, ask=lambda _prompt: next(replies), tell=lambda _line: None, force=False)
+
+    avatar = load_project(out).avatar
+    assert avatar.enabled is True
+    assert avatar.position == "side"
+    assert avatar.size == pytest.approx(0.5)
+    assert avatar.images is None
+
+
 def test_save_refuses_to_overwrite(tmp_path):
     path = tmp_path / "project.yaml"
     path.write_text("existing")

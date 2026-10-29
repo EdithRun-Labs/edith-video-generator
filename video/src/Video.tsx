@@ -2,6 +2,7 @@ import React from "react";
 import { AbsoluteFill, Sequence, staticFile } from "remotion";
 import { Captions } from "./Captions";
 import { Credits } from "./Credits";
+import { avatarInset } from "./Presenter";
 import { SceneView } from "./SceneView";
 import { TitleCard } from "./TitleCard";
 import type { Props } from "./types";
@@ -25,6 +26,7 @@ export const Video: React.FC<Props> = (props) => {
   const body = stack(props.fonts.body?.family);
   const heading = stack(props.fonts.heading?.family ?? props.fonts.body?.family);
   const cues = props.scenes.flatMap((scene) => scene.captions);
+  const inset = avatarInset(props.avatar, props.canvas.height);
 
   return (
     <AbsoluteFill
@@ -60,7 +62,7 @@ export const Video: React.FC<Props> = (props) => {
       ) : null}
 
       {props.captions.burned_in ? (
-        <Captions cues={cues} palette={props.palette} position={props.captions.position} />
+        <Captions cues={cues} palette={props.palette} position={props.captions.position} inset={inset} />
       ) : null}
     </AbsoluteFill>
   );

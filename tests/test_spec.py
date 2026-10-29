@@ -72,6 +72,55 @@ def test_duration_drift_warns(tmp_path):
     assert any("add up to" in w for w in project.warnings(DEMO.parent))
 
 
+def test_avatar_defaults_are_ready_for_the_renderer():
+    avatar = load_project(DEMO).avatar
+    assert avatar.enabled is True
+    assert avatar.position == "corner"
+    assert avatar.size == pytest.approx(0.34)
+    assert avatar.images is None
+
+
+def test_avatar_accepts_every_position(tmp_path):
+    for position in ("corner", "side", "full"):
+        raw = _spec()
+        raw["avatar"]["position"] = position
+        path = tmp_path / f"{position}.yaml"
+        path.write_text(yaml.safe_dump(raw))
+        assert load_project(path).avatar.position == position
+
+
+def test_avatar_rejects_an_unknown_position(tmp_path):
+    raw = _spec()
+    raw["avatar"]["position"] = "left"
+    path = tmp_path / "project.yaml"
+    path.write_text(yaml.safe_dump(raw))
+    with pytest.raises(SpecError, match="avatar.position"):
+        load_project(path)
+
+
+def test_avatar_size_accepts_the_range_and_rejects_the_edges(tmp_path):
+    raw = _spec()
+    raw["avatar"]["size"] = 0.2
+    small = tmp_path / "small.yaml"
+    small.write_text(yaml.safe_dump(raw))
+    assert load_project(small).avatar.size == pytest.approx(0.2)
+
+    raw["avatar"]["size"] = 0.95
+    too_big = tmp_path / "big.yaml"
+    too_big.write_text(yaml.safe_dump(raw))
+    with pytest.raises(SpecError, match="avatar.size"):
+        load_project(too_big)
+
+
+def test_avatar_missing_image_folder_warns(tmp_path):
+    raw = _spec()
+    raw["avatar"]["images"] = "art"
+    path = tmp_path / "project.yaml"
+    path.write_text(yaml.safe_dump(raw))
+    project = load_project(path)
+    assert any("avatar.images" in warning and "art" in warning for warning in project.warnings(tmp_path))
+
+
 def test_manifest_declares_the_heavy_externals():
     manifest = load_manifest()
     ids = {dep.id for dep in manifest.dependencies}

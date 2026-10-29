@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Audio, interpolate, Sequence, staticFile, useCurrentFrame } from "remotion";
 import { Diagram } from "./Diagram";
+import { avatarInset, Presenter } from "./Presenter";
 import type { Props, Scene } from "./types";
 
 type Props2 = { scene: Scene; props: Props; fontFamily: string };
@@ -16,10 +17,25 @@ export const SceneView: React.FC<Props2> = ({ scene, props, fontFamily }) => {
   const lift = interpolate(sinceParagraph, [0, 10], [16, 0], { extrapolateRight: "clamp" });
 
   const { palette } = props;
-  const bottomPad = props.captions.burned_in && props.captions.position === "bottom" ? 210 : 72;
-  const padding = `72px 88px ${bottomPad}px`;
+  const captionBand = props.captions.burned_in && props.captions.position === "bottom";
+  const bottomPad = captionBand ? 210 : 72;
+  const inset = avatarInset(props.avatar, props.canvas.height);
+  const padding = `72px ${88 + inset.right}px ${bottomPad}px ${88 + inset.left}px`;
   const muted = palette.text_muted ?? palette.text;
   const rules = palette.hairline ?? palette.text;
+
+  const local = absolute - active.startFrame;
+  const shape =
+    active.mouth.find((cue) => local >= cue.startFrame && local < cue.endFrame)?.shape ?? "X";
+  const presenter = props.avatar.enabled ? (
+    <Presenter
+      avatar={props.avatar}
+      shape={shape}
+      palette={palette}
+      frameHeight={props.canvas.height}
+      captionBand={captionBand}
+    />
+  ) : null;
 
   const text = (
     <div style={{ opacity, transform: `translateY(${lift}px)` }}>
@@ -67,8 +83,15 @@ export const SceneView: React.FC<Props2> = ({ scene, props, fontFamily }) => {
     </Sequence>
   ));
 
+  const layer = (body: React.ReactNode) => (
+    <>
+      {body}
+      {presenter}
+    </>
+  );
+
   if (props.layout === "split" && diagram) {
-    return (
+    return layer(
       <AbsoluteFill style={{ padding, flexDirection: "column" }}>
         {audio}
         {heading}
@@ -76,12 +99,12 @@ export const SceneView: React.FC<Props2> = ({ scene, props, fontFamily }) => {
           <div style={{ flex: 0.9, display: "flex", alignItems: "center" }}>{text}</div>
           <div style={{ flex: 1.1, minHeight: 0 }}>{diagram}</div>
         </div>
-      </AbsoluteFill>
+      </AbsoluteFill>,
     );
   }
 
   if (props.layout === "fullbleed" && diagram) {
-    return (
+    return layer(
       <AbsoluteFill style={{ padding, flexDirection: "column" }}>
         {audio}
         {heading}
@@ -98,11 +121,11 @@ export const SceneView: React.FC<Props2> = ({ scene, props, fontFamily }) => {
         >
           {text}
         </div>
-      </AbsoluteFill>
+      </AbsoluteFill>,
     );
   }
 
-  return (
+  return layer(
     <AbsoluteFill style={{ padding, flexDirection: "column" }}>
       {audio}
       {heading}
@@ -110,6 +133,6 @@ export const SceneView: React.FC<Props2> = ({ scene, props, fontFamily }) => {
         <div style={{ display: "flex", justifyContent: "center" }}>{text}</div>
         {diagram ? <div style={{ flex: 1, minHeight: 0 }}>{diagram}</div> : null}
       </div>
-    </AbsoluteFill>
+    </AbsoluteFill>,
   );
 };
