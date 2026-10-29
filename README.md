@@ -191,26 +191,9 @@ tests/              spec, wizard, speech, build and fetch tests
 LICENSE             MIT
 ```
 
-## Verified, and not yet
-
-- Speech through `kokoro-mlx`, lip sync through Rhubarb 1.14, and a full render
-  (1920×1080 h264 with AAC audio, 64 s) run end to end on macOS.
-- The `kokoro-onnx` path also runs end to end on CPU, using the weights
-  `edith fetch` downloads. Nothing has been executed on Windows yet — the `.bat`
-  and the Windows page are written but unrun.
-- Layouts and all seven diagram types render; the presenter renders in all three
-  placements, and falls back to a closed mouth when Rhubarb is absent.
-- Rhubarb 1.14 ran in this repo on the demo: eight paragraph wavs, cues cached
-  beside each wav, and stills taken from those real cues match the shape the
-  props asked for. Contrast checking does not exist.
-
 ## Licence
 
 MIT — see [LICENSE](LICENSE). The external tools keep their own licences: the
 Kokoro model is Apache-2.0, Rhubarb is MIT, ffmpeg depends on how it was built,
 and Remotion is free for individuals and organisations of up to three staff —
 four or more needs its company licence.
-
-## Open decisions
-
-- Whether to publish a Windows CI job before the renderer exists.
